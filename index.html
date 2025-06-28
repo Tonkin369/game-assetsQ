@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Neomorphism Mystery Box Game with Glow</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #e0e5ec;
+      text-align: center;
+      padding: 40px;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+      text-shadow: 1px 1px 1px #fff;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 80px);
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+
+    .box {
+      width: 80px;
+      height: 80px;
+      background: #e0e5ec;
+      color: #333;
+      font-size: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: 0.3s ease-in-out;
+      position: relative;
+      box-shadow: 
+        8px 8px 15px #a3b1c6,
+        -8px -8px 15px #ffffff,
+        0 0 12px rgba(255, 255, 255, 0.4); /* light overflow glow */
+    }
+
+    .box::before {
+      content: "";
+      position: absolute;
+      top: -8px;
+      left: -8px;
+      right: -8px;
+      bottom: -8px;
+      border-radius: 25px;
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.35);
+      opacity: 0;
+      transition: 0.3s ease-in-out;
+      z-index: -1;
+    }
+
+    .box:hover::before {
+      opacity: 1;
+    }
+
+    .box:hover {
+      transform: scale(1.05);
+    }
+
+    .box.open {
+      background: #f0f3f7;
+      box-shadow: 
+        inset 4px 4px 8px #c5d1e0,
+        inset -4px -4px 8px #ffffff,
+        0 0 20px rgba(255, 255, 255, 0.6); /* glow when opened */
+      transform: none;
+      cursor: default;
+    }
+
+    button {
+      padding: 12px 25px;
+      font-size: 16px;
+      background: #e0e5ec;
+      color: #333;
+      border: none;
+      border-radius: 15px;
+      box-shadow: 
+        5px 5px 15px #a3b1c6,
+        -5px -5px 15px #ffffff;
+      cursor: pointer;
+      transition: 0.2s ease-in-out;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 
+        3px 3px 8px #a3b1c6,
+        -3px -3px 8px #ffffff,
+        0 0 12px rgba(255, 255, 255, 0.5);
+    }
+
+    button:active {
+      box-shadow: 
+        inset 4px 4px 8px #c5d1e0,
+        inset -4px -4px 8px #ffffff;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Mystery Box Blast 💣</h1>
+<div class="grid" id="gameGrid"></div>
+<button onclick="resetGame()">🔁 Reset Game</button>
+
+<!-- Boom Sound -->
+<audio id="boomSound" src="https://raw.githubusercontent.com/Tonkin369/game-assetsQ/main/explosion-42132.mp3
+
+" preload="auto"></audio>
+
+<script>
+  const emojis = ['😄', '🐱', '🍕', '🚗', '🌟', '🏀', '🎵', '🐶', '🍔', '🎮', '👻', '🐼', '🦄', '💎', '🧸', '🎲', '🧠', '🎁', '📱', '🚀', '🍩', '🥑', '📷', '🧃'];
+  const gridSize = 25;
+  const grid = document.getElementById('gameGrid');
+  const boomSound = document.getElementById('boomSound');
+
+  const popSounds = [
+    "https://www.fesliyanstudios.com/play-mp3/387",
+    "https://www.fesliyanstudios.com/play-mp3/388",
+    "https://www.fesliyanstudios.com/play-mp3/389",
+    "https://www.fesliyanstudios.com/play-mp3/390"
+  ];
+  const popAudios = popSounds.map(src => {
+    const audio = new Audio(src);
+    audio.preload = "auto";
+    return audio;
+  });
+
+  let boomIndex;
+  let usedEmojis = [];
+
+  function getRandomPopSound() {
+    const randIndex = Math.floor(Math.random() * popAudios.length);
+    return popAudios[randIndex];
+  }
+
+  function initGame() {
+    grid.innerHTML = '';
+    boomIndex = parseInt(localStorage.getItem("boomIndex"));
+    usedEmojis = JSON.parse(localStorage.getItem("usedEmojis"));
+
+    if (!usedEmojis || usedEmojis.length < 24 || isNaN(boomIndex)) {
+      boomIndex = Math.floor(Math.random() * gridSize);
+      usedEmojis = [...emojis].sort(() => 0.5 - Math.random());
+      localStorage.setItem("boomIndex", boomIndex);
+      localStorage.setItem("usedEmojis", JSON.stringify(usedEmojis));
+    }
+
+    for (let i = 0; i < gridSize; i++) {
+      const box = document.createElement('div');
+      box.classList.add('box');
+      box.dataset.index = i;
+
+      const storedOpen = localStorage.getItem("box_" + i);
+      if (storedOpen) {
+        box.classList.add('open');
+        box.textContent = storedOpen;
+      }
+
+      box.addEventListener('click', function () {
+        if (box.classList.contains('open')) return;
+
+        box.classList.add('open');
+        const idx = parseInt(box.dataset.index);
+
+        if (idx === boomIndex) {
+          box.textContent = '💣';
+          boomSound.currentTime = 0;
+          boomSound.play();
+          localStorage.setItem("box_" + idx, '💣');
+          setTimeout(() =>  100);
+        } else {
+          const emoji = usedEmojis[idx >= boomIndex ? idx - 1 : idx] || '🎲';
+          box.textContent = emoji;
+          const sound = getRandomPopSound();
+          sound.currentTime = 0;
+          sound.play();
+          localStorage.setItem("box_" + idx, emoji);
+        }
+      });
+
+      grid.appendChild(box);
+    }
+  }
+
+  function resetGame() {
+    localStorage.clear();
+    initGame();
+  }
+
+  initGame();
+</script>
+
+</body>
+</html>
